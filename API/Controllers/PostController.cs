@@ -37,6 +37,15 @@ namespace API.Controllers
             return result;
         }
 
+        [HttpGet("PostBySearch/{searchText}")]
+        public IEnumerable<Post> PostBySearch(string searchText)
+        {
+            IEnumerable<Post> result = _dataContextDapper.LoadData<Post>("SELECT * FROM TutorialAppSchema.Posts WHERE PostTitle LIKE @SearchText OR PostContent LIKE @SearchText;", new { SearchText = "%" + searchText + "%" });
+
+            return result;
+        }
+
+
         [HttpPost("Post")]
         public IActionResult AddPost(PostToAddDto postToAddDto)
         {
