@@ -10,14 +10,14 @@ namespace API.Controllers
     [ApiController]
     [Route("[controller]")]
 
-    public class UserEFController(IConfiguration configuration) : ControllerBase
+    public class UserEFController(IUserRepository userRepository) : ControllerBase
     {
-        readonly DataContextEF _entityFramework = new(configuration);
+        readonly IUserRepository _userRepository = userRepository;
 
         [HttpGet("GetUsers")]
         public IEnumerable<User> GetUsers()
         {
-            IEnumerable<User> result = _entityFramework.Users.ToList<User>();
+            IEnumerable<User> result = _userRepository.GetUsers();
             return result;
         }
 
@@ -32,24 +32,19 @@ namespace API.Controllers
         [HttpGet("GetSingleUser/{userId}")]
         public User GetSingleUser(int userId)
         {
-            User? result = _entityFramework.Users.Where<User>(u => u.UserId == userId).FirstOrDefault<User>();
-            if (result != null)
-            {
-                return result;
-            }
-            throw new Exception("User not found.");
+            return _userRepository.GetSingleUser(userId);
         }
 
         [HttpPut("EditUser")]
         public IActionResult EditUser(User user)
         {
-            User? userDb = _entityFramework.Users.Where<User>(u => u.UserId == user.UserId).FirstOrDefault<User>() ?? throw new Exception("User not found.");
+            User? userDb = _userRepository.GetSingleUser(user.UserId) ?? throw new Exception("User not found.");
             userDb.FirstName = user.FirstName;
             userDb.LastName = user.LastName;
             userDb.Email = user.Email;
             userDb.Gender = user.Gender;
             userDb.Active = user.Active;
-            if (_entityFramework.SaveChanges() > 0)
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -57,7 +52,6 @@ namespace API.Controllers
             {
                 throw new Exception("Failed to update user.");
             }
-
         }
 
         [HttpPost("AddUser")]
@@ -72,8 +66,8 @@ namespace API.Controllers
                 Gender = user.Gender,
                 Active = user.Active
             };
-            _entityFramework.Users.Add(userDb);
-            if (_entityFramework.SaveChanges() > 0)
+            _userRepository.AddEntity(userDb);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -85,9 +79,9 @@ namespace API.Controllers
         [HttpDelete("DeleteUser/{userId}")]
         public IActionResult DeleteUser(int userId)
         {
-            User? userDb = _entityFramework.Users.Where<User>(u => u.UserId == userId).FirstOrDefault<User>() ?? throw new Exception("User not found.");
-            _entityFramework.Users.Remove(userDb);
-            if (_entityFramework.SaveChanges() > 0)
+            User? userDb = _userRepository.GetSingleUser(userId) ?? throw new Exception("User not found.");
+            _userRepository.Remove(userDb);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -101,29 +95,23 @@ namespace API.Controllers
         [HttpGet("GetUserJobInfor/{userId}")]
         public UserJobInfor GetUserJobInfor(int userId)
         {
-            UserJobInfor? result = _entityFramework.UserJobInfors.Where<UserJobInfor>(u => u.UserId == userId).FirstOrDefault<UserJobInfor>() ?? throw new Exception("User Job Infor not found.");
-
-            return result;
+           return _userRepository.GetSingleUserJobInfor(userId);
         }
         [HttpGet("GetUserSalary/{userId}")]
         public UserSalary GetUserSalary(int userId)
         {
-            UserSalary? result = _entityFramework.UserSalaries.Where<UserSalary>(u => u.UserId == userId).FirstOrDefault<UserSalary>() ?? throw new Exception("User Salary not found.");
-
-            return result;
+            return _userRepository.GetSingleUserSalary(userId);
         }
 
         [HttpGet("GetAllUserSalaries")]
         public IEnumerable<UserSalary> GetAllUserSalaries()
         {
-            IEnumerable<UserSalary> result = _entityFramework.UserSalaries.ToList<UserSalary>() ?? throw new Exception("No User Salaries found.");
-            return result;
+           return _userRepository.GetAllUserSalaries() ?? throw new Exception("No User Salaries found.");
         }
         [HttpGet("GetAllUserJobInfors")]
         public IEnumerable<UserJobInfor> GetAllUserJobInfors()
         {
-            IEnumerable<UserJobInfor> result = _entityFramework.UserJobInfors.ToList<UserJobInfor>() ?? throw new Exception("No User Job Infors found.");
-            return result;
+            return _userRepository.GetAllUserJobInfors() ?? throw new Exception("No User Job Infors found.");
         }
 
         [HttpPost("AddUserJobInfor")]
@@ -134,8 +122,8 @@ namespace API.Controllers
                 JobTitle = userJobInforDto.JobTitle,
                 Department = userJobInforDto.Department
             };
-            _entityFramework.UserJobInfors.Add(userJobInforDb);
-            if (_entityFramework.SaveChanges() > 0)
+            _userRepository.AddEntity(userJobInforDb);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -152,8 +140,8 @@ namespace API.Controllers
             {
                 Salary = userSalary.Salary
             };
-            _entityFramework.UserSalaries.Add(userSalaryDb);
-            if (_entityFramework.SaveChanges() > 0)
+            _userRepository.AddEntity(userSalaryDb);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -166,10 +154,10 @@ namespace API.Controllers
         [HttpPut("EditUserJobInfor")]
         public IActionResult EditUserJobInfor(UserJobInfor userJobInfor)
         {
-            UserJobInfor? userJobInforDb = _entityFramework.UserJobInfors.Where<UserJobInfor>(u => u.UserId == userJobInfor.UserId).FirstOrDefault<UserJobInfor>() ?? throw new Exception("User Job Infor not found.");
+            UserJobInfor? userJobInforDb = _userRepository.GetSingleUserJobInfor(userJobInfor.UserId);
             userJobInforDb.JobTitle = userJobInfor.JobTitle;
             userJobInforDb.Department = userJobInfor.Department;
-            if (_entityFramework.SaveChanges() > 0)
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -181,9 +169,8 @@ namespace API.Controllers
         [HttpPut("EditUserSalary")]
         public IActionResult EditUserSalary(UserSalary userSalary)
         {
-            UserSalary? userSalaryDb = _entityFramework.UserSalaries.Where<UserSalary>(u => u.UserId == userSalary.UserId).FirstOrDefault<UserSalary>() ?? throw new Exception("User Salary not found.");
-            userSalaryDb.Salary = userSalary.Salary;
-            if (_entityFramework.SaveChanges() > 0)
+            UserSalary? userSalaryDb = _userRepository.GetSingleUserSalary(userSalary.UserId);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -195,9 +182,9 @@ namespace API.Controllers
         [HttpDelete("DeleteUserJobInfor/{userId}")]
         public IActionResult DeleteUserJobInfor(int userId)
         {
-            UserJobInfor? userJobInforDb = _entityFramework.UserJobInfors.Where<UserJobInfor>(u => u.UserId == userId).FirstOrDefault<UserJobInfor>() ?? throw new Exception("User Job Infor not found.");
-            _entityFramework.UserJobInfors.Remove(userJobInforDb);
-            if (_entityFramework.SaveChanges() > 0)
+            UserJobInfor? userJobInforDb = _userRepository.GetSingleUserJobInfor(userId); ;
+            _userRepository.Remove(userJobInforDb);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }
@@ -209,9 +196,9 @@ namespace API.Controllers
         [HttpDelete("DeleteUserSalary/{userId}")]
         public IActionResult DeleteUserSalary(int userId)
         {
-            UserSalary? userSalaryDb = _entityFramework.UserSalaries.Where<UserSalary>(u => u.UserId == userId).FirstOrDefault<UserSalary>() ?? throw new Exception("User Salary not found.");
-            _entityFramework.UserSalaries.Remove(userSalaryDb);
-            if (_entityFramework.SaveChanges() > 0)
+            UserSalary? userSalaryDb = _userRepository.GetSingleUserSalary(userId); ;
+            _userRepository.Remove(userSalaryDb);
+            if (_userRepository.SaveChanges())
             {
                 return Ok();
             }

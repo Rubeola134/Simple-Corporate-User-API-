@@ -90,3 +90,12 @@ INSERT INTO TutorialAppSchema.Users(
 
 DELETE FROM TutorialAppSchema.Users
 WHERE UserId = 1001;
+
+CREATE TABLE TutorialAppSchema.Auth
+(
+    Email NVARCHAR(100),
+    PasswordHash VARBINARY(MAX),
+    PasswordSalt VARBINARY(MAX),
+)
+
+SELECT * FROM TutorialAppSchema.Auth WHERE Email = '';

@@ -1,3 +1,7 @@
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
@@ -30,7 +34,24 @@ builder.Services.AddCors((options) =>
 
 
 
- 
+builder.Services.AddScoped<API.Data.IUserRepository, API.Data.UserRepository>();
+
+SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:TokenKey"] ?? throw new Exception("Missing PasswordKey")));
+
+TokenValidationParameters tokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuerSigningKey = false,
+    IssuerSigningKey = key,
+    ValidateIssuer = false,
+    ValidateAudience = false
+};
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = tokenValidationParameters;
+    });
+
 var app = builder.Build();
  
 // Configure the HTTP request pipeline.
@@ -65,6 +86,8 @@ else
 //     app.UseHttpsRedirection();
 // }
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 // app.MapGet("/weatherforecast", () =>

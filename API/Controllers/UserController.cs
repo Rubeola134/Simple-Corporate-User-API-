@@ -1,11 +1,12 @@
 using API.Data;
 using API.Dtos;
 using API.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
 
